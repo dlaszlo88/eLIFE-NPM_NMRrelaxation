@@ -1,0 +1,167 @@
+(* Coded by D.Ban between 2013-2014 (c) 2016 St.Jude Children's \
+Research Hospital
+Dept.of Structural Biology *)
+ClearAll["Global`*"]
+
+rHN = 1.04 10^-10;
+theta = 17*(Pi/180);
+delN = -162*10^-6;
+u0 = 12.56637061 10^-7;
+h = 6.62606896 10^-34;
+gH = 2.67513 10^8;
+gN = -2.7116*1 10^7;
+
+Jw[tC_, w_, S2_, tF_] := (
+  tau = (tC tF)/(tC + tF); (0.4 * S2 * 
+      tC)/(1 + (w * tC)^2) + ((0.4*(1 - S2)*tau)/(1 + (tau w)^2))
+  )
+
+nXYcalc[tC_, S2_, tF_, JwFUNC_, Bf_] := (
+  rHN = 1.04 10^-10;
+  theta = 17*(Pi/180);
+  delN = -162*10^-6;
+  u0 = 12.56637061 10^-7;
+  h = 6.62606896 10^-34;
+  gH = 2.67513 10^8;
+  gN = -2.7116*1 10^7;
+  wH = 2 Pi*Bf*1 10^6;
+  wN = (gN/gH)*wH;
+  Bo = wH/gH;
+  p = -(u0 gH gN h)/(8 Pi^2 rHN^3);
+  d = (gN Bo delN)/(Sqrt[3]);
+  AA = 0.5 (3 Cos[theta]^2 - 1);
+  BB = p d;
+  ((Sqrt[3]/
+      6) AA BB ((4 JwFUNC[tC, 0, S2, tF]) + (3 JwFUNC[tC, wN, S2, 
+         tF])))
+  )
+
+R1calc[tC_, S2_, tF_, JwFUNC_, Bf_] := (
+  rHN = 1.04 10^-10;
+  theta = 17*(Pi/180);
+  delN = -162*10^-6;
+  u0 = 12.56637061 10^-7;
+  h = 6.62606896 10^-34;
+  gH = 2.67513 10^8;
+  gN = -2.7116*1 10^7;
+  wH = 2 Pi*Bf*1 10^6;
+  wN = (gN/gH)*wH;
+  Bo = wH/gH;
+  hbar = (6.62606896 10^-34)/(2 Pi);
+  dHN = (u0 hbar gH gN)^2/(16 Pi^2 rHN^6);
+  cHN = ((delN gN Bo)^2)/3.0;
+  R1Nd = (dHN/
+      4.0)*(JwFUNC[tC, wH - wN, S2, 
+       tF] + (3.0*JwFUNC[tC, wN, S2, tF]) + (6.0*
+        JwFUNC[tC, wH + wN, S2, tF]));
+  R1Nc = cHN*JwFUNC[tC, wN, S2, tF];
+  (R1Nd + R1Nc)
+  )
+
+SetDirectory[""]
+RES = {};
+dat = Import["res_" <> ToString[RES[[1]]] <> "_Rdata_freeNPM.txt", 
+  "Table"]
+
+
+xx = 1;
+mALL = {};
+numFIELDS = 3;
+
+For[yy = 0, yy < numFIELDS, yy++ 1,
+ If[
+   dat[[yy + 1, 1]] != 0,
+   Print[dat[[yy + 1, All]]];
+   Btemp = dat[[yy + 1, 1]];
+   nXYobs = dat[[yy + 1, 2]];
+   md = (nXYobs - nXYcalc[t0, S, 0.0, Jw, Btemp])^2/(dat[[yy + 1, 
+        3]]^2);
+   mALL = Append[mALL, md];,
+   Continue[]
+   ]
+  If[
+   dat[[yy + 1, 1]] == 0,
+   Print["OH NOES!"],
+   Continue[]
+   ]
+ ]
+
+If[
+ dat[[4, 1]] != 0,
+ B0R1 = dat[[4, 1]];
+ R1obs = dat[[4, 2]];
+ md2 = (R1obs - R1calc[t0, S, 0.0, Jw, B0R1])^2/(dat[[4, 3]]^2);
+ mALL = Append[mALL, md2];,
+ Continue[]
+ ]
+mFUNC = Sum[mALL[[i]], {i, 1, Length[mALL]}];
+nd = NMinimize[{mFUNC, 0.0 < S < 1, t0 > 0}, {t0, S}, 
+  MaxIterations -> 100000]
+
+Print["S2/tF (ps)"]
+nd[[2, 1, 2]]
+nd[[2, 2, 2]]*1 10^12
+
+
+
+xx = 1;
+resultsS2 = {};
+resultsTF = {};
+mALL = {};
+numFIELDS = 3;
+MCrun = 200;
+While[xx < MCrun + 1,
+ mALL = {};
+ For[yy = 0, yy < numFIELDS, yy++ 1,
+  If[
+    dat[[yy + 1, 1]] != 0,
+    Btemp = dat[[yy + 1, 1]];
+    nXYobs = 
+     RandomReal[
+      NormalDistribution[dat[[yy + 1, 2]], dat[[yy + 1, 3]]], 1];
+    md = (nXYobs[[1]] - nXYcalc[t0, S, 0.0, Jw, Btemp])^2/(dat[[
+         yy + 1, 3]]^2);
+    mALL = Append[mALL, md];,
+    Continue[]
+    ]
+   If[
+    dat[[yy + 1, 1]] == 0,
+    Continue[]
+    ]
+  ];
+ 
+ If[
+  dat[[4, 1]] != 0,
+  B0R1 = dat[[4, 1]];
+  R1obs = 
+   RandomReal[NormalDistribution[dat[[4, 2]], dat[[4, 3]]], 1];
+  md2 = (R1obs[[1]] - R1calc[t0, S, 0.0, Jw, B0R1])^2/(dat[[4, 
+       3]]^2);
+  mALL = Append[mALL, md2];,
+  Continue[]
+  ];
+ mFUNC = Sum[mALL[[i]], {i, 1, Length[mALL]}];
+ nd = NMinimize[{mFUNC, 0 < S < 1, t0 > 0}, {t0, S}, 
+   MaxIterations -> 1000];
+ resultsS2 = Append[resultsS2, nd[[2, 1, 2]]];
+ resultsTF = Append[resultsTF, nd[[2, 2, 2]]];
+ xx++
+ ]
+Print["t0 avg +/- t0 err"]
+Mean[resultsS2]*1 10^9
+StandardDeviation[resultsS2]*1 10^9
+Print["S2 avg +/- S2 err"]
+Mean[resultsTF]
+StandardDeviation[resultsTF]
+
+t0 avg +/- t0 err
+
+6.1229
+
+0.237521
+
+S2 avg +/- S2 err
+
+0.721661
+
+0.0229627
