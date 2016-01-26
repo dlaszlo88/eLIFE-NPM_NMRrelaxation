@@ -1,0 +1,79 @@
+(* Coded by D. Ban between 2013-2014
+(c) 2016 St. Jude Children's Research Hospital
+Dept. of Structural Biology *)
+
+ClearAll["Global`*"]
+Needs["ErrorBarPlots`"]
+SetDirectory[""]
+
+
+SetDirectory[""]
+
+
+reslist = Import["", "Data"];
+
+rawdata = Import["", "Data"]
+Length[reslist]
+Length[rawdata[[All, 1]]]
+
+resNUM = Length[reslist];
+
+Lvalues = {};
+Po = ;
+varList = Table["dw" <> ToString[reslist[[i, 1]]], {i, 1, resNUM}];
+varListA = Table["A" <> ToString[reslist[[i, 1]]], {i, 1, resNUM}];
+allVar = Insert[varList, Kd, 1];
+allVarA2 = Insert[varList, varListA[[All]], 1]
+allVarA3 = Flatten[Insert[allVarA2, Kd, 1]]
+allVarA4 = {Kd, A6, A17, A25, A26, A47, A48, A54, A60, A61, A71, A72, 
+  dw6, dw17, dw25, dw26, dw47, dw48, dw54, dw60, dw61, dw71, dw72}
+(*allVarsig = Insert[varList,Kd2,1];
+allVarsig2 = Insert[allVarsig,Kd1,1]*)
+
+gFit2state[Lv_, Pv_, dw_, resN_, var_, Gvar_] := (x1 = d2/(2*PT); 
+  y1 = (LT + PT + Kd) - Sqrt[(LT + PT + Kd)^2 - (4*LT*PT)];
+  func = x1*y1; 
+  fdat = Table[(dw[[j, i]] - func /. {LT -> Lv[[i]], PT -> Pv, 
+        d2 -> ToExpression[var[[j]]]})^2, {i, 1, Length[Lv]}, {j, 1, 
+     resN}];
+  fdat2 = Table[
+    Sum[fdat[[i, j]], {i, 1, Length[Lv]}],
+    {j, 1, resN}]; fdat3 = Sum[fdat2[[i]], {i, 1, resN}];
+  NMinimize[{fdat3, Kd > 0}, ToExpression[Gvar]])
+
+gFit2stateA[Lv_, Pv_, dw_, resN_, var_, varA_, 
+  Gvar_] := (x1 = d2/(2*PT*a); 
+  y1 = (LT + (a*PT) + Kd) - Sqrt[(LT + (a*PT) + Kd)^2 - (4*LT*a*PT)];
+  func = x1*y1; 
+  fdat = Table[(dw[[j, i]] - func /. {LT -> Lv[[i]], PT -> Pv, 
+        a -> ToExpression[varA[[j]]], 
+        d2 -> ToExpression[var[[j]]]})^2, {i, 1, Length[Lv]}, {j, 1, 
+     resN}];
+  fdat2 = Table[
+    Sum[fdat[[i, j]], {i, 1, Length[Lv]}],
+    {j, 1, resN}]; fdat3 = Sum[fdat2[[i]], {i, 1, resN}];
+  NMinimize[{fdat3, Kd > 0}, ToExpression[Gvar]])
+
+
+
+f2state = gFit2state[Lvalues, Po, rawdata, resNUM, varList, allVar]
+f2stateX = 
+ gFit2stateA[Lvalues, Po, rawdata, resNUM, varList, varListA, allVarA3]
+
+varB[PTz_, LTz_, Kdz_, d2z_] :=
+ (x1z = d2z/(2*PTz); 
+  y1z = (LTz + PTz + Kdz) - Sqrt[(LTz + PTz + Kdz)^2 - (4*LTz*PTz)]; 
+  func = x1z*y1z
+  )
+For[jj = 1, jj < Length[reslist] + 1, jj++ 1,
+ Print[reslist[[jj, 1]] " <-- Residue"]; 
+ xxx = Table[{Lvalues[[td]], rawdata[[jj, td]]}, {td, 1, 
+    Length[rawdata[[1, All]]]}];
+ Print[Show[{
+    ListPlot[xxx, PlotMarkers -> {Automatic, Medium}, 
+     PlotRange -> All],
+    Plot[varB[Po, cc, f2state[[2, 1, 2]], 
+      f2state[[2, 1 + jj, 2]]], {cc, 0, 1000}, PlotStyle -> Black]
+    }]
+  ]
+ ]
