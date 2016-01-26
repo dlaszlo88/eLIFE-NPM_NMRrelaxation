@@ -3,7 +3,7 @@ All NMR related data analysis scripts for the eLife publication titled NPM1 inte
 
 Within the enclosed zipped file is a readme containing file descriptors and all scripts utilized for analyzing the NMR relaxation data recorded at 600, 800, and 1000 MHz. 
 
-Also included is a python script for querying R-motifs from amino acid sequences (.
+Also included is a python script for querying R-motifs from amino acid sequences (Multivalent_RMotifs).
 
 ###David Ban  Jan. 26, 2016 #####
 
