@@ -1,0 +1,48 @@
+#!/usr/bin/python
+# ./script list
+
+import sys
+import math
+import fileinput
+import string
+import re
+
+Z = sys.argv[1]
+Names=[]
+Sequences=[]
+seq=''
+i=0
+
+for line in fileinput.input([Z]):
+   line=line.split('\n')
+   line=line[0]
+   if line[0]=='>':
+     if i!=0:
+       Sequences.append(seq)
+     seqName = line
+     seq=''
+     Names.append(seqName)
+     i = i+1
+   else:
+     seq=seq+line
+Sequences.append(seq)
+
+j=0
+
+matchlist = []
+
+while j < len(Names):
+   jSq=Sequences[j]
+   ArgNumber=jSq.count('R')
+   SeqLength=len(jSq)
+   match = re.findall('(R{1,100}[ACDEFGHIKLMNPQSTVWY]{0,2}R{1,100}[ACDEFGHIKLMNPQSTVWY]{3,20}R{1,100}[ACDEFGHIKLMNPQSTVWY]{0,2}R{1,100})',jSq)
+   for item in match:
+     matchlist.append(item)
+# these two lines print the motifs
+   for item in matchlist:
+     print item
+   print len(match), 'Arg Motifs',
+   print ArgNumber, 'Arginines',
+   print SeqLength, 'Residues',
+   print '#', Names[j]
+   j=j+1
